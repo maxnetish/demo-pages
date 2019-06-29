@@ -1,4 +1,114 @@
-import {createRandomArray, swapArrayElements, elapsed, getElementbyName} from "./utils.js";
+import {createRandomArray, swapArrayElements, elapsed, getElementbyName, Component, h, render} from "./utils.js";
+
+const availableLenghts = [
+    10, 100, 1000, 10000
+];
+
+class BubbleSectionComponent extends Component {
+
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            calculating: false,
+            calcResults: [
+                // {
+                //     arrayType: 'RANDOM' | 'SORTED' | 'NEAR_SORTED',
+                //     arrayLength: 0,
+                //     duration: Date.now(),
+                // }
+            ]
+        };
+    }
+
+    render(props, state) {
+        return (
+            h('div', {'class': 'p-strip is-shallow is-bordered'},
+                h(Header),
+                h(Description),
+                h('div', {'class': 'row'},
+                    h('div', {'class': 'col-12'},
+                        h('form', {'class': 'p-form p-form--inline', name: 'bubbleForm'},
+                            h('div', {'class': 'p-form__group p-form-validation'},
+                                h('div', {'class': 'p-form__control u-clearfix'},
+                                    h('div', {'class': 'p-form-validation__select-wrapper'},
+                                        h('select', {
+                                                'class': 'p-form-validation__input',
+                                                name: 'bubbleArrayLength',
+                                                id: 'bubbleArrayLengthSelect'
+                                            },
+                                            availableLenghts.map(len => h('option', {value: len}, len)))
+                                    ),
+                                    h('p', {'class': 'p-form-help-text'}, 'Select array length'),
+                                )
+                            ),
+                            h('button', {
+                                    'class': 'p-button--neutral has-icon',
+                                    'type': 'submit',
+                                    name: 'bubbleRunSortButton'
+                                },
+                                h('i', {'class': 'p-icon--spinner', name: 'waitIndicatorIcon'}),
+                                'Run bubble sort'
+                            )
+                        )
+                    )
+                ),
+                h('div', {'class': 'row'},
+                    h('div', {'class': 'col-12'},
+                        h('h4', null, 'Results')
+                    )
+                ),
+                h('div', {'class': 'row'},
+                    h('div', {'class': 'col-12'},
+                        h('table', null,
+                            h('colgroup', null,
+                                h('col', null),
+                                h('col', null),
+                                h('col', null),
+                            ),
+                            h('thead', null,
+                                h('tr', null,
+                                    h('th', null, 'Source array'),
+                                    h('th', null, 'Number of elements'),
+                                    h('th', null, 'Time')
+                                )
+                            ),
+                            h('tbody', null),
+                            h('tfoot', null),
+                        ),
+                    )
+                )
+            )
+        );
+    }
+}
+
+function Header(props) {
+    return (
+        h('div', {'class': 'row',},
+            h('h2', {'class': 'col-12',},
+                'Bubble',
+            )
+        )
+    );
+}
+
+function Description() {
+    return (
+        h('div', {'class': 'row'},
+            h('div', {'class': 'col-12'},
+                h('p', null,
+                    h('a', {href: 'https://en.wikipedia.org/wiki/Bubble_sort'}, 'Bubble sort'),
+                    'is not the worst but, yes, worse than many others.'
+                )
+            )
+        )
+    );
+}
+
+
+render(h(BubbleSectionComponent), document.querySelector('#bubbleSection'));
+
 
 const sectionId = 'bubbleSection';
 const formName = 'bubbleForm';

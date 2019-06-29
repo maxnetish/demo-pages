@@ -35,6 +35,13 @@ function getElementbyName({sectionId, elementName}) {
     return document.querySelector(`#${sectionId} [name="${elementName}"]`);
 }
 
+// reexport preact lib
+export {
+    Component,
+    h,
+    render
+} from 'https://cdn.jsdelivr.net/npm/preact/dist/preact.mjs';
+
 export {
     createRandomArray,
     swapArrayElements,
