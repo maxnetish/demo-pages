@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo pages - sorting</title>
+    <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla-framework-version-2.0.1.min.css"/>
+</head>
+<body>
+<header class="p-strip--light">
+    <div class="row">
+        <h1 class="col-12">Sort</h1>
+        <p class=p-heading--four">Implementation of several sort algorithms</p>
+    </div>
+</header>
+<section class="p-strip is-shallow is-bordered" id="bubbleSection">
+    <div class="row">
+        <h2 class="col-12">Bubble</h2>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <p><a href="https://en.wikipedia.org/wiki/Bubble_sort">Bubble sort</a>
+                is not the worst but, yes, worse than many others.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <form class="p-form p-form--inline" name="bubbleForm">
+                <div class="p-form__group p-form-validation">
+                    <!-- add class 'is-error' to show validation err -->
+                    <div class="p-form__control u-clearfix">
+                        <div class="p-form-validation__select-wrapper">
+                            <select class="p-form-validation__input"
+                                    name="bubbleArrayLength"
+                                    id="bubbleArrayLengthSelect">
+                                <option value="" disabled>Select length</option>
+                                <option value="10" selected="selected">10</option>
+                                <option value="100">100</option>
+                                <option value="1000">1000</option>
+                                <option value="10000">10000</option>
+                            </select>
+                        </div>
+                        <p class="p-form-help-text">
+                            Select array length
+                        </p>
+                    </div>
+                </div>
+                <button class="p-button--neutral has-icon" type="submit" name="bubbleRunSortButton">
+                    <i class="p-icon--spinner" name="waitIndicatorIcon"></i>
+                    Run bubble sort
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <h4>Results</h4>
+        </div>
+    </div>
+    <ul class="p-list" name="calcResults">
+        <template name="calcResultItemTemplate">
+            <li class="p-list__item">
+                <div class="row">
+                    <div class="col-2" data-src="arrayType">
+                        Random array
+                    </div>
+                    <div class="col-2" data-src="arrayLength">
+                        100
+                    </div>
+                    <div class="col-8" data-src="duration">
+                        12345ms
+                    </div>
+                </div>
+            </li>
+        </template>
+    </ul>
+</section>
+<script type="module" src="main.js"></script>
+</body>
+</html>
