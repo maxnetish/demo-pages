@@ -35,6 +35,8 @@ function getElementbyName({sectionId, elementName}) {
     return document.querySelector(`#${sectionId} [name="${elementName}"]`);
 }
 
+// export * from 'https://cdn.jsdelivr.net/npm/knockout@3.5.0'
+
 // reexport preact lib
 export {
     Component,
