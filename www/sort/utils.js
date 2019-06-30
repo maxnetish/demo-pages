@@ -2,8 +2,8 @@ const maxInt = 0xFFFFFFFF;
 
 /**
  * creates array of random uint32 integers
- * @param {integer} len
- * @param {integer} max
+ * @param {number} len
+ * @param {number} max
  * @returns {Uint32Array}
  */
 function createRandomArray(len, max) {

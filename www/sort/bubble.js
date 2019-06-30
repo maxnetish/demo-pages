@@ -21,6 +21,102 @@ class BubbleSectionComponent extends Component {
         };
     }
 
+    bubbleForm = null;
+
+    setFormRef(el) {
+        this.bubbleForm = el;
+    }
+
+    onSubmitBubbleForm(ev) {
+
+    }
+
+    resultIdIerator = (function* idGenerator(){
+        let id = 0;
+        while (true) {
+            yield ++id;
+        }
+    })();
+
+    performTestCalcWithArray({probeArray, probeType}) {
+        const id = this.resultIdIerator.next();
+        const newResult = {
+            arrayType: probeType,
+            arrayLength: probeArray.length,
+            duration: null,
+            id,
+        };
+
+        this.setState(state => {
+            const calcResults = state.calcResults.slice();
+            calcResults.push(newResult);
+            return {
+                calcResults,
+            };
+        });
+
+        // TODO add setTimeout to allow update view
+
+        const duration = elapsed(() => {
+            bubbleSort(probeArray);
+        });
+
+        this.setState()
+    }
+
+    performTestCalcWithOneLength({len}) {
+        const probeArray = createRandomArray(len, Math.floor((len * 2) / 3));
+        this.setState({
+            calculating: true
+        });
+
+        // random array:
+        const firstResult = {
+            arrayType: 'RANDOM',
+            arrayLength: len,
+            duration: null,
+        };
+        this.setState({
+            calcResults: calcResults.slice().push(firstResult)
+        });
+        let duration = elapsed(() => {
+            bubbleSort(probeArray);
+        });
+        this.setState({
+            calcResults: calcResults.slice(0, -1).push(firstResult)
+        })
+        calcResultsCopy.push(firstResult);
+
+        // sorted array:
+        const secondResult = {
+            arrayType: 'SORTED',
+            arrayLength: len,
+            duration: null,
+        };
+        secondResult.duration = elapsed(() => {
+            bubbleSort(probeArray);
+        });
+        calcResultsCopy.push(secondResult);
+
+        // near sorted:
+        // change one element in sorted array
+        probeArray[probeArray.length - 7] = probeArray[probeArray.length - 7] === 0 ? 1 : 0;
+        const thirdResult = {
+            arrayType: 'NEAR_SORTED',
+            arrayLength: len,
+            duration: null,
+        };
+        thirdResult.duration = elapsed(() => {
+            bubbleSort(probeArray);
+        });
+        calcResultsCopy.push(thirdResult);
+
+        updateState({
+            calculating: false,
+            calcResults: calcResultsCopy,
+        });
+    }
+
     render(props, state) {
         return (
             h('div', {'class': 'p-strip is-shallow is-bordered'},
@@ -28,7 +124,11 @@ class BubbleSectionComponent extends Component {
                 h(Description),
                 h('div', {'class': 'row'},
                     h('div', {'class': 'col-12'},
-                        h('form', {'class': 'p-form p-form--inline', name: 'bubbleForm'},
+                        h('form', {
+                                'class': 'p-form p-form--inline',
+                                ref: this.setFormRef,
+                                onSubmit: this.onSubmitBubbleForm.bind(this)
+                            },
                             h('div', {'class': 'p-form__group p-form-validation'},
                                 h('div', {'class': 'p-form__control u-clearfix'},
                                     h('div', {'class': 'p-form-validation__select-wrapper'},
@@ -45,7 +145,6 @@ class BubbleSectionComponent extends Component {
                             h('button', {
                                     'class': 'p-button--neutral has-icon',
                                     'type': 'submit',
-                                    name: 'bubbleRunSortButton'
                                 },
                                 h('i', {'class': 'p-icon--spinner', name: 'waitIndicatorIcon'}),
                                 'Run bubble sort'
