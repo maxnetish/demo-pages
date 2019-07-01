@@ -1,4 +1,4 @@
-import './bubble.js';
-// import {init as initBubbleView} from "./bubble.js";
+import {BubbleSectionComponent} from "./bubble.js";
+import {h, render} from "./utils.js";
 
-// initBubbleView();
+render(h(BubbleSectionComponent), document.querySelector('#bubbleSection'));

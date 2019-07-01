@@ -14,6 +14,18 @@ function createRandomArray(len, max) {
     return result;
 }
 
+/**
+ * Fill passes array with random uints
+ * @param {Uint32Array} uint32Array
+ * @param {number} max
+ */
+function fillArrayWithRandoms(uint32Array, max) {
+    const len = uint32Array.length;
+    for (let ind = len; ind > -1; ind--) {
+        uint32Array[ind] = getArbitaryRandomInt(max);
+    }
+}
+
 function swapArrayElements(a, ind1, ind2) {
     const t = a[ind1];
     a[ind1] = a[ind2];
@@ -35,7 +47,7 @@ function getElementbyName({sectionId, elementName}) {
     return document.querySelector(`#${sectionId} [name="${elementName}"]`);
 }
 
-// export * from 'https://cdn.jsdelivr.net/npm/knockout@3.5.0'
+const classNames = window.classNames;
 
 // reexport preact lib
 export {
@@ -45,8 +57,10 @@ export {
 } from 'https://cdn.jsdelivr.net/npm/preact/dist/preact.mjs';
 
 export {
+    classNames,
     createRandomArray,
     swapArrayElements,
     elapsed,
     getElementbyName,
+    fillArrayWithRandoms,
 }

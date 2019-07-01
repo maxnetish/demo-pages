@@ -1,7 +1,12 @@
-import {createRandomArray, swapArrayElements, elapsed, getElementbyName, Component, h, render} from "./utils.js";
+import {
+    Component,
+    h,
+    classNames,
+    fillArrayWithRandoms
+} from "./utils.js";
 
 const availableLenghts = [
-    10, 100, 1000, 10000
+    10, 100, 1000, 10000, 100000
 ];
 
 class BubbleSectionComponent extends Component {
@@ -16,33 +21,90 @@ class BubbleSectionComponent extends Component {
                 //     arrayType: 'RANDOM' | 'SORTED' | 'NEAR_SORTED',
                 //     arrayLength: 0,
                 //     duration: Date.now(),
+                //     id: number
                 // }
             ]
         };
+
+        this.bubbleForm = null;
+
+        this.resultIdIerator = (function* idGenerator() {
+            let id = 0;
+            while (true) {
+                yield ++id;
+            }
+        })();
     }
 
-    bubbleForm = null;
+    componentDidMount() {
+        this.sortWorker = runWorker();
+        this.bindedWorkerMessageListener = this.onMessageFromWorker.bind(this);
+        this.sortWorker.addEventListener('message', this.bindedWorkerMessageListener);
+    }
+
+    componentWillUnmount() {
+        this.sortWorker.removeEventListener('message', this.bindedWorkerMessageListener);
+        this.sortWorker.terminate();
+    }
 
     setFormRef(el) {
         this.bubbleForm = el;
     }
 
     onSubmitBubbleForm(ev) {
+        ev.preventDefault();
+        if (this.state.calculating) {
+            return;
+        }
+        const len = parseInt(ev.target.elements['bubbleArrayLength'].value, 10);
+        this.performTestCalcWithOneLength({len});
+    }
+
+    onMessageFromWorker(messageEvenet) {
+        const {id, duration, passBuffer} = messageEvenet.data;
+        const resultData = this.state.calcResults.find(r => r.id === id);
+        // update result object
+        // change id else preact will not detect changes
+        const newResultData = Object.assign({}, resultData, {id: this.resultIdIerator.next().value, duration});
+
+        this.setState(state => {
+            const resultDataInd = state.calcResults.findIndex(r => r.id === id);
+            const results = state.calcResults.slice();
+            results.splice(resultDataInd, 1, newResultData);
+            return {
+                calcResults: results
+            };
+        });
+
+        switch (resultData.arrayType) {
+            case 'RANDOM':
+                // run task with sorted array:
+                this.performTestCalcWithArray({probeBuffer: passBuffer, probeType: 'SORTED'});
+                break;
+            case 'SORTED':
+                // run task with near-sorted array:
+                // set one array element to sorted array becomes "near-sorted"
+                const probeArray = new Uint32Array(passBuffer);
+                probeArray[probeArray.length - 7] = probeArray[probeArray.length - 7] === 0 ? 1 : 0;
+                this.performTestCalcWithArray({probeBuffer: passBuffer, probeType: 'NEAR_SORTED'});
+                break;
+            case 'NEAR_SORTED':
+                // case 'NEAR_SORTED' is last so do nothing
+                // stop, we should update state:
+                this.setState({
+                    calculating: false,
+                });
+                break;
+        }
 
     }
 
-    resultIdIerator = (function* idGenerator(){
-        let id = 0;
-        while (true) {
-            yield ++id;
-        }
-    })();
+    performTestCalcWithArray({probeBuffer, probeType}) {
+        const id = this.resultIdIerator.next().value;
 
-    performTestCalcWithArray({probeArray, probeType}) {
-        const id = this.resultIdIerator.next();
         const newResult = {
             arrayType: probeType,
-            arrayLength: probeArray.length,
+            arrayLength: probeBuffer.byteLength / 4,
             duration: null,
             id,
         };
@@ -55,65 +117,24 @@ class BubbleSectionComponent extends Component {
             };
         });
 
-        // TODO add setTimeout to allow update view
-
-        const duration = elapsed(() => {
-            bubbleSort(probeArray);
-        });
-
-        this.setState()
+        // init calculation
+        this.sortWorker.postMessage({
+            id,
+            passBuffer: probeBuffer,
+        }, [
+            probeBuffer
+        ]);
     }
 
     performTestCalcWithOneLength({len}) {
-        const probeArray = createRandomArray(len, Math.floor((len * 2) / 3));
+        // each uint32 = 4 bytes
+        const buffer = new ArrayBuffer(len * 4);
+        const probeArray = new Uint32Array(buffer);
+        fillArrayWithRandoms(probeArray, Math.floor((len * 2) / 3));
+        this.performTestCalcWithArray({probeBuffer: buffer, probeType: 'RANDOM'});
+
         this.setState({
-            calculating: true
-        });
-
-        // random array:
-        const firstResult = {
-            arrayType: 'RANDOM',
-            arrayLength: len,
-            duration: null,
-        };
-        this.setState({
-            calcResults: calcResults.slice().push(firstResult)
-        });
-        let duration = elapsed(() => {
-            bubbleSort(probeArray);
-        });
-        this.setState({
-            calcResults: calcResults.slice(0, -1).push(firstResult)
-        })
-        calcResultsCopy.push(firstResult);
-
-        // sorted array:
-        const secondResult = {
-            arrayType: 'SORTED',
-            arrayLength: len,
-            duration: null,
-        };
-        secondResult.duration = elapsed(() => {
-            bubbleSort(probeArray);
-        });
-        calcResultsCopy.push(secondResult);
-
-        // near sorted:
-        // change one element in sorted array
-        probeArray[probeArray.length - 7] = probeArray[probeArray.length - 7] === 0 ? 1 : 0;
-        const thirdResult = {
-            arrayType: 'NEAR_SORTED',
-            arrayLength: len,
-            duration: null,
-        };
-        thirdResult.duration = elapsed(() => {
-            bubbleSort(probeArray);
-        });
-        calcResultsCopy.push(thirdResult);
-
-        updateState({
-            calculating: false,
-            calcResults: calcResultsCopy,
+            calculating: true,
         });
     }
 
@@ -126,7 +147,7 @@ class BubbleSectionComponent extends Component {
                     h('div', {'class': 'col-12'},
                         h('form', {
                                 'class': 'p-form p-form--inline',
-                                ref: this.setFormRef,
+                                ref: this.setFormRef.bind(this),
                                 onSubmit: this.onSubmitBubbleForm.bind(this)
                             },
                             h('div', {'class': 'p-form__group p-form-validation'},
@@ -145,9 +166,15 @@ class BubbleSectionComponent extends Component {
                             h('button', {
                                     'class': 'p-button--neutral has-icon',
                                     'type': 'submit',
+                                    'disabled': state.calculating,
                                 },
-                                h('i', {'class': 'p-icon--spinner', name: 'waitIndicatorIcon'}),
-                                'Run bubble sort'
+                                h('i', {
+                                    'class': classNames({
+                                        'p-icon--spinner': true,
+                                        'u-animation--spin': state.calculating
+                                    })
+                                }),
+                                ' Run bubble sort'
                             )
                         )
                     )
@@ -172,7 +199,17 @@ class BubbleSectionComponent extends Component {
                                     h('th', null, 'Time')
                                 )
                             ),
-                            h('tbody', null),
+                            h('tbody', null, state.calcResults.map(res => {
+                                return h('tr', {key: res.id},
+                                    h('td', null, res.arrayType),
+                                    h('td', null, res.arrayLength),
+                                    h('td', null,
+                                        typeof res.duration === 'number' ?
+                                            `${res.duration} ms` :
+                                            h('i', {'class': 'p-icon--spinner u-animation--spin'})
+                                    )
+                                )
+                            })),
                             h('tfoot', null),
                         ),
                     )
@@ -198,189 +235,78 @@ function Description() {
             h('div', {'class': 'col-12'},
                 h('p', null,
                     h('a', {href: 'https://en.wikipedia.org/wiki/Bubble_sort'}, 'Bubble sort'),
-                    'is not the worst but, yes, worse than many others.'
+                    ' is not the worst but, yes, worse than many others.'
                 )
             )
         )
     );
 }
 
-
-render(h(BubbleSectionComponent), document.querySelector('#bubbleSection'));
-
-
-const sectionId = 'bubbleSection';
-const formName = 'bubbleForm';
-
-const state = {
-    calculating: false,
-    calcResults: [
-        // {
-        //     arrayType: 'RANDOM' | 'SORTED' | 'NEAR_SORTED',
-        //     arrayLength: 0,
-        //     duration: Date.now(),
-        // }
-    ]
-};
-
-function updateState(update) {
-    Object.assign(state, update);
-    updateView();
-}
-
-function updateView() {
-    const bubbleRunSortButton = getElementbyName({
-        sectionId,
-        elementName: 'bubbleRunSortButton',
-    });
-    const waitIndicatorIcon = getElementbyName({
-        sectionId,
-        elementName: 'waitIndicatorIcon'
-    });
-    const resultList = getElementbyName({
-        sectionId,
-        elementName: 'calcResults',
-    });
-    const resultItemTemplate = getElementbyName({
-        sectionId,
-        elementName: 'calcResultItemTemplate',
-    });
-
-    if (bubbleRunSortButton) {
-        bubbleRunSortButton.disabled = state.calculating;
-    }
-
-    if (waitIndicatorIcon) {
-        if (state.calculating) {
-            waitIndicatorIcon.classList.add('u-animation--spin');
-        } else {
-            waitIndicatorIcon.classList.remove('u-animation--spin');
-        }
-    }
-
-    if (resultList && resultItemTemplate) {
-        const listItems = state.calcResults.map(oneResult => {
-            const resultItem = resultItemTemplate.content.cloneNode(true);
-            resultItem.querySelector('[data-src="arrayType"]').textContent = oneResult.arrayType;
-            resultItem.querySelector('[data-src="arrayLength"]').textContent = oneResult.arrayLength;
-            resultItem.querySelector('[data-src="duration"]').textContent = `${oneResult.duration.valueOf()} ms`;
-            return resultItem;
-        });
-        // remove items
-        const childNodes = Array.prototype.slice.call(resultList.childNodes);
-        childNodes.forEach(child => {
-            if (child !== resultItemTemplate) {
-                child.remove();
-            }
-        });
-
-        // while (resultList.firstChild) {
-        //     resultList.removeChild(resultList.firstChild);
-        // }
-
-        // add new ones
-        listItems.forEach(listItem => {
-            resultList.appendChild(listItem);
-        });
-    }
-}
-
-
-function onBubbleFormSubmit(ev) {
-    ev.preventDefault();
-
-    if (state.calculating) {
-        return;
-    }
-
-    const targetForm = ev.target;
-    const bubbleArrayLengthElement = targetForm.elements.bubbleArrayLength;
-
-    const len = parseInt(bubbleArrayLengthElement.value, 10);
-    runSort(len);
-}
-
-function runSort(len) {
-    const probeArray = createRandomArray(len, Math.floor((len * 2) / 3));
-    updateState({
-        calculating: true
-    });
-    const calcResultsCopy = state.calcResults.slice();
-
-    // random array:
-    const firstResult = {
-        arrayType: 'RANDOM',
-        arrayLength: len,
-        duration: null,
-    };
-    firstResult.duration = elapsed(() => {
-        bubbleSort(probeArray);
-    });
-    calcResultsCopy.push(firstResult);
-
-    // sorted array:
-    const secondResult = {
-        arrayType: 'SORTED',
-        arrayLength: len,
-        duration: null,
-    };
-    secondResult.duration = elapsed(() => {
-        bubbleSort(probeArray);
-    });
-    calcResultsCopy.push(secondResult);
-
-    // near sorted:
-    // change one element in sorted array
-    probeArray[probeArray.length - 7] = probeArray[probeArray.length - 7] === 0 ? 1 : 0;
-    const thirdResult = {
-        arrayType: 'NEAR_SORTED',
-        arrayLength: len,
-        duration: null,
-    };
-    thirdResult.duration = elapsed(() => {
-        bubbleSort(probeArray);
-    });
-    calcResultsCopy.push(thirdResult);
-
-    updateState({
-        calculating: false,
-        calcResults: calcResultsCopy,
-    });
+/**
+ * Creates worker for bubbleSortInWorker()
+ * @returns {Worker}
+ */
+function runWorker() {
+    return new Worker(URL.createObjectURL(new Blob([
+            '(' + bubbleSortInWorker + ')()'
+        ]))
+    );
 }
 
 /**
- *
- * @param {Uint32Array} a
+ * Function to run in web worker
  */
-function bubbleSort(a) {
-    const aLen = a.length;
+function bubbleSortInWorker() {
+    /**
+     *
+     * @param {Uint32Array} a
+     */
+    function bubbleSort(a) {
+        const aLen = a.length;
 
-    if (aLen === 0 || aLen === 1) {
-        return;
-    }
+        if (aLen === 0 || aLen === 1) {
+            return;
+        }
 
-    let prev,
-        ind,
-        passed = false;
-    while (!passed) {
-        passed = true;
-        for (ind = 1; ind < aLen; ind++) {
-            prev = ind - 1;
-            if (a[prev] > a[ind]) {
-                passed = false;
-                swapArrayElements(a, prev, ind);
+        let prev,
+            ind,
+            passed = false;
+        while (!passed) {
+            passed = true;
+            for (ind = 1; ind < aLen; ind++) {
+                prev = ind - 1;
+                if (a[prev] > a[ind]) {
+                    passed = false;
+                    swapArrayElements(a, prev, ind);
+                }
             }
         }
     }
-}
 
-function initView() {
-    document.bubbleForm.addEventListener('submit', onBubbleFormSubmit);
-    updateView();
-}
+    function swapArrayElements(a, ind1, ind2) {
+        const t = a[ind1];
+        a[ind1] = a[ind2];
+        a[ind2] = t;
+    }
 
+    self.addEventListener('message', function (messageEvent) {
+        const {id, passBuffer} = messageEvent.data;
+        const passedArray = new Uint32Array(passBuffer);
+
+        const start = Date.now();
+        bubbleSort(passedArray);
+        const end = Date.now();
+
+        postMessage({
+            id,
+            duration: end - start,
+            passBuffer,
+        }, [
+            passBuffer
+        ]);
+    });
+}
 
 export {
-    initView as init,
-    bubbleSort,
+    BubbleSectionComponent,
 }
