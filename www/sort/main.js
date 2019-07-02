@@ -1,4 +1,4 @@
-import {BubbleSectionComponent} from "./bubble.js";
+import {SortSectionComponent} from "./sort-component.js";
 import {h, render} from "./utils.js";
 
-render(h(BubbleSectionComponent), document.querySelector('#bubbleSection'));
+render(h(SortSectionComponent), document.querySelector('#bubbleSection'));
