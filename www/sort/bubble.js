@@ -2,12 +2,18 @@ import {
     Component,
     h,
     classNames,
-    fillArrayWithRandoms
+    fillArrayWithRandoms,
 } from "./utils.js";
 
 const availableLenghts = [
     10, 100, 1000, 10000, 100000
 ];
+
+const arrayTypeMap = new Map([
+    ['RANDOM', 'Random'],
+    ['SORTED', 'Sorted'],
+    ['NEAR_SORTED', 'Almost sorted']
+]);
 
 class BubbleSectionComponent extends Component {
 
@@ -196,19 +202,21 @@ class BubbleSectionComponent extends Component {
                                 h('tr', null,
                                     h('th', null, 'Source array'),
                                     h('th', null, 'Number of elements'),
-                                    h('th', null, 'Time')
+                                    h('th', null, 'Time, milliseconds')
                                 )
                             ),
                             h('tbody', null, state.calcResults.map(res => {
-                                return h('tr', {key: res.id},
-                                    h('td', null, res.arrayType),
-                                    h('td', null, res.arrayLength),
-                                    h('td', null,
-                                        typeof res.duration === 'number' ?
-                                            `${res.duration} ms` :
-                                            h('i', {'class': 'p-icon--spinner u-animation--spin'})
+                                return (
+                                    h('tr', {key: res.id},
+                                        h('td', null, arrayTypeMap.get(res.arrayType) || res.arrayType),
+                                        h('td', null, res.arrayLength),
+                                        h('td', null,
+                                            typeof res.duration === 'number' ?
+                                                res.duration.toLocaleString() :
+                                                h('i', {'class': 'p-icon--spinner u-animation--spin'})
+                                        )
                                     )
-                                )
+                                );
                             })),
                             h('tfoot', null),
                         ),
