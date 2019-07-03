@@ -19,10 +19,15 @@ const arrayTypeMap = new Map([
 
 const sortAlgorithmesMap = new Map([
     ['BUBBLE', 'Bubble'],
-    ['QUICK', 'Quick']
+    ['QUICK', 'Quick'],
+    ['MERGE', 'Merge'],
+    ['SHELL', 'Shell sort'],
+    ['PLATFORM', 'JS internal implementation'],
 ]);
 
 class SortSectionComponent extends Component {
+
+    // TODO add ability to terminate calculation
 
     constructor(props) {
         super(props);
@@ -63,6 +68,14 @@ class SortSectionComponent extends Component {
 
     setFormRef(el) {
         this.sortParametersForm = el;
+    }
+
+    onClearButtonClick(ev) {
+        this.setState(state => {
+            return {
+                calcResults: []
+            };
+        });
     }
 
     onSubmitSortOptionsForm(ev) {
@@ -187,11 +200,22 @@ class SortSectionComponent extends Component {
                                 },
                                 h('i', {
                                     'class': classNames({
-                                        'p-icon--spinner': true,
+                                        ' p-icon--spinner': true,
                                         'u-animation--spin': state.calculating
                                     })
                                 }),
                                 ' Run sort'
+                            ),
+                            h('button', {
+                                    'class': 'p-button--negative has-icon',
+                                    'type': 'button',
+                                    'disabled': state.calcResults.length === 0,
+                                    onClick: this.onClearButtonClick.bind(this),
+                                },
+                                h('i', {
+                                    'class': 'p-icon--close is-light'
+                                }),
+                                ' Clear results'
                             )
                         )
                     )
@@ -252,8 +276,18 @@ function Description() {
                 h('p', null,
                     h('a', {href: 'https://en.wikipedia.org/wiki/Quicksort'}, 'Quick sort'),
                     ' is very quick, but recursive.'
-                )
-
+                ),
+                h('p', null,
+                    h('a', {href: 'https://en.wikipedia.org/wiki/Merge_sort'}, 'Merge sort'),
+                    ' a little bit slower than previous one, but it is not recursive.'
+                ),
+                h('p', null,
+                    h('a', {href: 'https://en.wikipedia.org/wiki/Shellsort'}, 'Shell\'s sort'),
+                    ' a little bit faster than bubble. Complexity: O(n',
+                    h('sup', null, '2'),
+                    ') - O(n log n). Implementation uses gaps from ',
+                    h('a', {href: 'https://oeis.org/A055875'}, 'https://oeis.org/A055875'),
+                ),
             )
         )
     );
