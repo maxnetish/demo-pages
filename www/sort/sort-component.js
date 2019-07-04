@@ -25,10 +25,10 @@ const sortAlgorithmesMap = new Map([
     ['PLATFORM', 'JS internal implementation'],
 ]);
 
+const utilsWorkerUrl = './array-worker.js';
+const sortWorkerUrl = './sort-worker.js';
+
 class SortSectionComponent extends Component {
-
-    // TODO add ability to terminate calculation
-
     constructor(props) {
         super(props);
 
@@ -57,13 +57,13 @@ class SortSectionComponent extends Component {
     }
 
     componentDidMount() {
-        this.arrayUtilsTaskRunner = new TaskRunner({workerUrl: './array-worker.js'});
-        this.sortTaskRunner = new TaskRunner({workerUrl: './sort-worker.js'});
+        this.arrayUtilsTaskRunner = new TaskRunner({workerUrl: utilsWorkerUrl});
+        this.sortTaskRunner = new TaskRunner({workerUrl: sortWorkerUrl});
     }
 
     componentWillUnmount() {
-        this.arrayUtilsTaskRunner.dispose();
-        this.sortTaskRunner.dispose();
+        this.arrayUtilsTaskRunner.terminate();
+        this.sortTaskRunner.terminate();
     }
 
     setFormRef(el) {
@@ -72,8 +72,26 @@ class SortSectionComponent extends Component {
 
     onClearButtonClick(ev) {
         this.setState(state => {
+            const calcResults = state.calcResults.filter(r => typeof r.duration !== 'number');
             return {
-                calcResults: []
+                calcResults,
+            };
+        });
+    }
+
+    onTerminateWorkerButtonClick(calcResult, ev) {
+        this.arrayUtilsTaskRunner.terminate();
+        this.sortTaskRunner.terminate();
+        this.arrayUtilsTaskRunner = new TaskRunner({workerUrl: utilsWorkerUrl});
+        this.sortTaskRunner = new TaskRunner({workerUrl: sortWorkerUrl});
+
+        this.setState(state => {
+            const calcResults = state.calcResults.slice();
+            const calcResultInd = calcResults.findIndex(r => r.id === calcResult.id);
+            calcResults.splice(calcResultInd, 1);
+            return {
+                calculating: false,
+                calcResults,
             };
         });
     }
@@ -135,7 +153,7 @@ class SortSectionComponent extends Component {
                     const newResultId = results.findIndex(r => r.id === id);
                     const updatedResult = Object.assign({}, results[newResultId], {
                         duration,
-                        id: this.resultIdIerator.next().value
+                        // id: this.resultIdIerator.next().value
                     });
                     results.splice(newResultId, 1, updatedResult);
                     return {
@@ -216,9 +234,9 @@ class SortSectionComponent extends Component {
                                     'class': 'p-icon--close is-light'
                                 }),
                                 ' Clear results'
-                            )
-                        )
-                    )
+                            ),
+                        ),
+                    ),
                 ),
                 h('div', {'class': 'row'},
                     h('div', {'class': 'col-12'},
@@ -251,17 +269,29 @@ class SortSectionComponent extends Component {
                                         h('td', null,
                                             typeof res.duration === 'number' ?
                                                 res.duration.toLocaleString() :
-                                                h('i', {'class': 'p-icon--spinner u-animation--spin'})
+                                                [
+                                                    h('i', {'class': 'p-icon--spinner u-animation--spin'}),
+                                                    h('button', {
+                                                            'class': 'p-button p-button--base has-icon',
+                                                            'type': 'button',
+                                                            onClick: this.onTerminateWorkerButtonClick.bind(this, res),
+                                                            title: 'Terminate calculation. Immediately terminate and restart background worker.'
+                                                        },
+                                                        h('i', {
+                                                            'class': 'p-icon--error'
+                                                        }),
+                                                    ),
+                                                ]
                                         )
                                     )
                                 );
                             })),
                             h('tfoot', null),
                         ),
-                    )
-                )
+                    ),
+                ),
             )
-        );
+        )
     }
 }
 

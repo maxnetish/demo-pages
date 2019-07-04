@@ -150,8 +150,9 @@ class TaskRunner {
         return promise;
     }
 
-    dispose() {
+    terminate() {
         this._unbindEvents();
+        this.worker.terminate();
     }
 }
 
