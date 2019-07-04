@@ -343,7 +343,17 @@ function swapArrayElements(a, ind1, ind2) {
 }
 
 function onMessage(messageEvent) {
-    const {algo, passBuffer, ...otherData} = messageEvent.data;
+    // Not work in Edge
+    // const {algo, passBuffer, ...otherData} = messageEvent.data;
+    const {algo, passBuffer} = messageEvent.data;
+    const otherData = Object.assign({}, messageEvent.data);
+    if (otherData.hasOwnProperty('algo')) {
+        delete otherData.algo;
+    }
+    if (otherData.hasOwnProperty('passBuffer')) {
+        delete otherData.passBuffer;
+    }
+
     const passedArray = new Uint32Array(passBuffer);
 
     const sortFn = sortAlgoMap.get(algo);

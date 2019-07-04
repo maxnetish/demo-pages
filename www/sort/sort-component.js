@@ -2,7 +2,6 @@ import {
     Component,
     h,
     classNames,
-    fillArrayWithRandoms,
     TaskRunner,
 } from "./utils.js";
 
@@ -146,7 +145,7 @@ class SortSectionComponent extends Component {
             })
             .then(({id, duration, passBuffer}) => {
                 const arr = new Uint32Array(passBuffer);
-                console.log(arr.length);
+                // console.log(arr.length);
                 // sort done, show result
                 this.setState(state => {
                     const results = state.calcResults.slice();

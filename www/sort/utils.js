@@ -94,7 +94,13 @@ class TaskRunner {
     }
 
     _onMessage(messageEvent) {
-        const {_runnerTaskId, ...resolveData} = messageEvent.data;
+        // Not work in Edge (Object rest props), so...
+        // const {_runnerTaskId, ...resolveData} = messageEvent.data;
+        const {_runnerTaskId} = messageEvent.data;
+        const resolveData = Object.assign({}, messageEvent.data);
+        if (resolveData.hasOwnProperty('_runnerTaskId')) {
+            delete resolveData._runnerTaskId;
+        }
 
         if (!this._taskPromises.has(_runnerTaskId)) {
             return;
@@ -109,7 +115,13 @@ class TaskRunner {
     }
 
     _onError(errorEvent) {
-        const {_runnerTaskId, ...rejectData} = errorEvent;
+        // Not work in Edge
+        // const {_runnerTaskId, ...rejectData} = errorEvent;
+        const {_runnerTaskId} = errorEvent;
+        const rejectData = Object.assign({}, errorEvent);
+        if (rejectData.hasOwnProperty('_runnerTaskId')) {
+            delete rejectData._runnerTaskId;
+        }
 
         if (!this._taskPromises.has(_runnerTaskId)) {
             throw errorEvent;
@@ -157,6 +169,7 @@ class TaskRunner {
 }
 
 const classNames = window.classNames;
+
 
 // reexport preact lib
 export {
