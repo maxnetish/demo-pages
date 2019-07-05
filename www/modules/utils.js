@@ -1,5 +1,6 @@
-function appendOutput(str, logElement = '#page-output') {
-    const outputElm = typeof logElement === 'string' ? document.querySelector('#page-output') : logElement;
+function appendOutput(str, logElement) {
+    logElement = logElement || '#page-output';
+    const outputElm = typeof logElement === 'string' ? document.querySelector(logElement) : logElement;
     outputElm.textContent = `${outputElm.textContent}\n${str}`;
 }
 
@@ -64,5 +65,5 @@ export const someMap = new Map([
 export {Component} from 'https://cdn.jsdelivr.net/npm/preact/dist/preact.mjs';
 
 export {
-    appendOutput,
+    appendOutput
 };
