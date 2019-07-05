@@ -120,6 +120,41 @@ function mergesortIterative(a) {
     }
 }
 
+function merge(left, right, result) {
+    let cursorLeft = 0;
+    let cursorRight = 0;
+    let cursorResult = 0;
+    const lenLeft = left.length;
+    const lenRight = right.length;
+
+    while (cursorLeft < lenLeft || cursorRight < lenRight) {
+        if (cursorLeft >= lenLeft) {
+            // items only in right part
+            result.set(cursorResult, right.get(cursorRight));
+            cursorResult++;
+            cursorRight++;
+            continue;
+        }
+        if (cursorRight >= lenRight) {
+            // items remain only in left part
+            result.set(cursorResult, left.get(cursorLeft));
+            cursorResult++;
+            cursorLeft++;
+            continue;
+        }
+        // select lesser item and insert into result
+        if (left.get(cursorLeft) <= right.get(cursorRight)) {
+            result.set(cursorResult, left.get(cursorLeft));
+            cursorResult++;
+            cursorLeft++;
+        } else {
+            result.set(cursorResult, right.get(cursorRight));
+            cursorResult++;
+            cursorRight++;
+        }
+    }
+}
+
 /**
  * Platform sort implementation
  */
@@ -139,7 +174,7 @@ function jsSort(a) {
 const distancesByPanchenko = [
     1,
     // 2 make match slow
-    // 2,
+    2,
     19,
     103,
     311,
@@ -181,6 +216,51 @@ const distancesByPanchenko = [
     800573,
     867677,
     938533,
+    1013609,
+    1092733,
+    1175071,
+    1262221,
+    1353887,
+    1449523,
+    1549817,
+    1655131,
+    1765469,
+    1879463,
+    1999121,
+    2124041,
+    2254493,
+    2389943,
+    2530973,
+    2677583,
+    2829503,
+    2987843,
+    3152099,
+    3321529,
+    3498577,
+    3681131,
+    3870077,
+    4065583,
+    4268039,
+    4476917,
+    4693093,
+    4915571,
+    5145347,
+    5382613,
+    5628457,
+    5881649,
+    6140957,
+    6408929,
+    6684971,
+    6966829,
+    7258871,
+    7559173,
+    7867547,
+    8184727,
+    8510507,
+    8843647,
+    9187333,
+    9539749,
+    9900923,
 ];
 
 /**
@@ -201,36 +281,8 @@ function getDistances(aLength) {
     return distancesByPanchenko.slice(0, ind + 1);
 }
 
-/**
- * Insert part of Shell sort
- * @param {Uint32Array} a
- * @param {number} increment
- */
-function insertSort(a, increment) {
-    const aLen = a.length;
-    const aLenWithoutOne = aLen - 1;
-    for (let startInd = 0; startInd < increment; startInd++) {
-        for (let ind = startInd; ind < aLenWithoutOne; ind += increment) {
-            let passInd = ind + increment;
-            if (passInd > aLenWithoutOne) {
-                passInd = aLenWithoutOne;
-            }
-            // console.log(`ind: ${ind}, increment: ${increment}, a: ${a}`);
-            for (; passInd - increment > -1; passInd -= increment) {
-                let prevPassInd = passInd - increment;
-                if (a[prevPassInd] > a[passInd]) {
-                    swapArrayElements(a, prevPassInd, passInd);
-                }
-            }
-        }
-    }
-}
-
-/**
- * Shell sort implementation
- * @param {Uint32Array} a
- */
 function shellSort(a) {
+    let internInd, ind, iItem;
     const aLen = a.length;
     if (aLen < 2) {
         // array with len 0 or 1 already sorted
@@ -238,49 +290,75 @@ function shellSort(a) {
     }
     const distances = getDistances(aLen);
     for (let distanceIndex = distances.length - 1; distanceIndex > -1; distanceIndex--) {
-        insertSort(a, distances[distanceIndex]);
+        let distance = distances[distanceIndex];
+
+        for (ind = distance; ind < aLen; ind++) {
+            // get element at ind
+            iItem = a[ind];
+            // and choose, where we have to insert it
+            for (internInd = ind - distance; internInd > -1 && a[internInd] > iItem; internInd -= distance) {
+                a[internInd + distance] = a[internInd];
+            }
+            a[internInd + distance] = iItem;
+        }
     }
 }
 
 /**
- * left and right - instanses of sorted ArraySlice, merges into result ArraySlice
- * @param {ArraySlice} left
- * @param {ArraySlice} right
- * @param {ArraySlice} result
+ * Heap sort
  */
-function merge(left, right, result) {
-    let cursorLeft = 0;
-    let cursorRight = 0;
-    let cursorResult = 0;
-    const lenLeft = left.length;
-    const lenRight = right.length;
 
-    while (cursorLeft < lenLeft || cursorRight < lenRight) {
-        if (cursorLeft >= lenLeft) {
-            // items only in right part
-            result.set(cursorResult, right.get(cursorRight));
-            cursorResult++;
-            cursorRight++;
-            continue;
-        }
-        if (cursorRight >= lenRight) {
-            // items remain only in left part
-            result.set(cursorResult, left.get(cursorLeft));
-            cursorResult++;
-            cursorLeft++;
-            continue;
-        }
-        // select lesser item and insert into result
-        if (left.get(cursorLeft) <= right.get(cursorRight)) {
-            result.set(cursorResult, left.get(cursorLeft));
-            cursorResult++;
-            cursorLeft++;
-        } else {
-            result.set(cursorResult, right.get(cursorRight));
-            cursorResult++;
-            cursorRight++;
-        }
+/**
+ *
+ * @param {Uint32Array} a
+ */
+function heapSort(a) {
+    const aLen = a.length;
+    // Build heap
+    for (let ind = Math.floor(aLen / 2 - 1); ind > -1; ind--) {
+        downHeap(a, ind, aLen - 1);
     }
+    // Now a[] is heap
+
+    for (let ind = aLen - 1; ind > 0; ind--) {
+        // First element is max element in current heap
+        // move it outside of heap
+        swapArrayElements(a, ind, 0);
+        // and restore heap in slice [(0)...(ind-1)]
+        downHeap(a, 0, ind - 1);
+    }
+}
+
+/**
+ *
+ * @param {Uint32Array} a
+ * @param {number} low
+ * @param {number} high
+ */
+function downHeap(a, low, high) {
+    const headItem = a[low];
+    const maxIndexWithChild = Math.floor(high / 2);
+
+    while (low <= maxIndexWithChild) {
+        // while a[low] has child
+        let childIndex = 2 * low;
+        // choose greater child: 'left' or 'right'
+        if (childIndex < high && a[childIndex] < a[childIndex + 1]) {
+            // 'right' greater than 'left', so choose 'right' child, else choose 'left' child
+            childIndex++;
+        }
+        if (headItem >= a[childIndex]) {
+            // if item at head greater than greater child,
+            // do nothing: headItem already in right place
+            break;
+        }
+        // else greater child move up
+        a[low] = a[childIndex];
+        // and go to check headItem in its new position - at childIndex (really in a[low] will be greater child)
+        low = childIndex;
+    }
+    // here really place headItem in found position
+    a[low] = headItem;
 }
 
 class ArraySlice {
@@ -376,6 +454,7 @@ const sortAlgoMap = new Map([
     ['MERGE', mergesortIterative],
     ['PLATFORM', jsSort],
     ['SHELL', shellSort],
+    ['HEAP', heapSort],
 ]);
 
 self.addEventListener('message', onMessage);

@@ -21,6 +21,7 @@ const sortAlgorithmesMap = new Map([
     ['QUICK', 'Quick'],
     ['MERGE', 'Merge'],
     ['SHELL', 'Shell sort'],
+    ['HEAP', 'Heap'],
     ['PLATFORM', 'JS internal implementation'],
 ]);
 
@@ -312,10 +313,14 @@ function Description() {
                 ),
                 h('p', null,
                     h('a', {href: 'https://en.wikipedia.org/wiki/Shellsort'}, 'Shell\'s sort'),
-                    ' a little bit faster than bubble. Complexity: O(n',
+                    ' the most magic. Complexity: O(n',
                     h('sup', null, '2'),
                     ') - O(n log n). Implementation uses gaps from ',
                     h('a', {href: 'https://oeis.org/A055875'}, 'https://oeis.org/A055875'),
+                ),
+                h('p', null,
+                    h('a', {href: 'https://en.wikipedia.org/wiki/Heapsort'}, 'Heapsort'),
+                    ' a little bit faster than merge. And not use additional memory Complexity: O(n log n). ',
                 ),
             )
         )
